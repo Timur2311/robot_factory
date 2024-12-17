@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programmer API</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f7fa;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+        .card {
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            font-family: monospace;
+        }
+        .alert {
+            margin-top: 20px;
+        }
+        table {
+            margin-top: 20px;
+            width: 100%;
+            table-layout: fixed;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <div class="container">
+        <h1 class="text-center">API для создание робота</h1>
+        <p>Отправьте данные JSON для создания нового робота:</p>
+
+        <!-- Form to send data to the API -->
+        <form id="api-form">
+            <div class="mb-3">
+                <label for="json-input" class="form-label">Ввод JSON</label>
+                <textarea id="json-input" class="form-control" placeholder='Введите сюда данные JSON (например, {"модель": "X5", "версия": "QE", "создано": "2023-01-01T10:01:04Z"})' required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Отправить</button>
+        </form>
+
+        <!-- Error/Success message display -->
+        <div id="response-message"></div>
+
+        <!-- Table to display response data -->
+        <div id="response-table" class="mt-4" style="display: none;">
+            <h3>Robot Created:</h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Serial</td>
+                        <td id="serial-value"></td>
+                    </tr>
+                    <tr>
+                        <td>Model</td>
+                        <td id="model-value"></td>
+                    </tr>
+                    <tr>
+                        <td>Version</td>
+                        <td id="version-value"></td>
+                    </tr>
+                    <tr>
+                        <td>Created</td>
+                        <td id="created-value"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <a href="/" class="btn btn-secondary mt-3">Вернуться на домашнюю страницу</a>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.getElementById('api-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Get the input value from the textarea
+            const jsonInput = document.getElementById('json-input').value;
+
+            // Try to parse the JSON input
+            let parsedData;
+            try {
+                parsedData = JSON.parse(jsonInput);
+            } catch (e) {
+                // Show error if JSON is invalid
+                document.getElementById('response-message').innerHTML = `
+                    <div class="alert alert-danger">Invalid JSON format. Please enter valid JSON.</div>`;
+                return;
+            }
+
+            // Send the POST request with the parsed data to the correct endpoint
+            fetch('http://127.0.0.1:8000/robot/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(parsedData),
+            })
+            .then(response => response.json()) // Expecting a JSON response
+            .then(data => {
+                console.log("API Response:", data);
+
+                // Check for field-specific errors (e.g., model or version errors)
+                if (data.model || data.version || data.non_field_errors) {
+                    let errorMessages = '';
+
+                    // Handle 'model' field errors
+                    if (data.model) {
+                        errorMessages += `<div><strong>Model:</strong> ${data.model.join('<br>')}</div>`;
+                    }
+
+                    // Handle 'version' field errors
+                    if (data.version) {
+                        errorMessages += `<div><strong>Version:</strong> ${data.version.join('<br>')}</div>`;
+                    }
+
+                    // Handle 'non_field_errors'
+                    if (data.non_field_errors) {
+                        errorMessages += `<div><strong>Error:</strong> ${data.non_field_errors.join('<br>')}</div>`;
+                    }
+
+                    // Display the error messages
+                    document.getElementById('response-message').innerHTML = `
+                        <div class="alert alert-danger">${errorMessages}</div>`;
+                    return;
+                }
+
+                // Check if response contains expected fields
+                if ('serial' in data && 'model' in data && 'version' in data && 'created' in data) {
+                    // Clear any previous error messages
+                    document.getElementById('response-message').innerHTML = '';
+
+                    // Display the response data in the table
+                    document.getElementById('response-table').style.display = 'block';
+
+                    // Set the values in the table
+                    document.getElementById('serial-value').innerText = data.serial || 'N/A';
+                    document.getElementById('model-value').innerText = data.model || 'N/A';
+                    document.getElementById('version-value').innerText = data.version || 'N/A';
+                    document.getElementById('created-value').innerText = new Date(data.created).toLocaleString() || 'N/A';
+                } else {
+                    document.getElementById('response-message').innerHTML = `
+                        <div class="alert alert-danger">Unexpected response format. Please check the API response.</div>`;
+                }
+            })
+            .catch(error => {
+                // Handle unexpected errors
+                document.getElementById('response-message').innerHTML = `
+                    <div class="alert alert-danger">An error occurred: ${error.message}</div>`;
+            });
+        });
+    </script>
+</body>
+</html>
