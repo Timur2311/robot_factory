@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  django:
+    build: .
+    container_name: django_app
+    env_file:
+      - ./.env
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis_service
+    environment:
+      - CELERY_BROKER_URL=redis://redis_service:6379/0
+
+  redis_service:
+    image: redis:latest
+    container_name: redis_server
+    ports:
+      - "6363:6379"
+
+  celery_worker:
+    build: .
+    container_name: celery_worker
+    command: celery -A R4C worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis_service
+      - django
+    env_file:
+      - ./.env
+    environment:
+      - CELERY_BROKER_URL=redis://redis_service:6379/0

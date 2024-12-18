@@ -10,7 +10,7 @@ def home(request):
         elif user_type == 'director':
             return redirect('director')  # Redirect to the director page
         elif user_type == 'customer':
-            return redirect('customer')  # Redirect to the customer page
+            return redirect('orders:order')  # Redirect to the customer page
     
     return render(request, 'home/home.html', {'user_type': user_type})
 

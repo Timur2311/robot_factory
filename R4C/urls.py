@@ -24,4 +24,5 @@ urlpatterns = [
     path('director/', views.director, name='director'),  # Director page
     path('customer/', views.customer, name='customer'),  # Customer page
     path('robot/', include("robots.urls")),
+    path('order/', include("orders.urls")),
 ]
