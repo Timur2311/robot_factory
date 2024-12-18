@@ -99,6 +99,10 @@
             // Get the input value from the textarea
             const jsonInput = document.getElementById('json-input').value;
 
+            // Clear previous messages and table
+            document.getElementById('response-message').innerHTML = '';
+            document.getElementById('response-table').style.display = 'none';
+
             // Try to parse the JSON input
             let parsedData;
             try {
@@ -122,32 +126,7 @@
             .then(data => {
                 console.log("API Response:", data);
 
-                // Check for field-specific errors (e.g., model or version errors)
-                if (data.model || data.version || data.non_field_errors) {
-                    let errorMessages = '';
-
-                    // Handle 'model' field errors
-                    if (data.model) {
-                        errorMessages += `<div><strong>Model:</strong> ${data.model.join('<br>')}</div>`;
-                    }
-
-                    // Handle 'version' field errors
-                    if (data.version) {
-                        errorMessages += `<div><strong>Version:</strong> ${data.version.join('<br>')}</div>`;
-                    }
-
-                    // Handle 'non_field_errors'
-                    if (data.non_field_errors) {
-                        errorMessages += `<div><strong>Error:</strong> ${data.non_field_errors.join('<br>')}</div>`;
-                    }
-
-                    // Display the error messages
-                    document.getElementById('response-message').innerHTML = `
-                        <div class="alert alert-danger">${errorMessages}</div>`;
-                    return;
-                }
-
-                // Check if response contains expected fields
+                // Handle success response
                 if ('serial' in data && 'model' in data && 'version' in data && 'created' in data) {
                     // Clear any previous error messages
                     document.getElementById('response-message').innerHTML = '';
@@ -161,8 +140,24 @@
                     document.getElementById('version-value').innerText = data.version || 'N/A';
                     document.getElementById('created-value').innerText = new Date(data.created).toLocaleString() || 'N/A';
                 } else {
+                    // Handle field-specific errors
+                    let errorMessages = '';
+
+                    if (data.model) {
+                        errorMessages += `<div><strong>Model:</strong> ${data.model.join('<br>')}</div>`;
+                    }
+                    if (data.version) {
+                        errorMessages += `<div><strong>Version:</strong> ${data.version.join('<br>')}</div>`;
+                    }
+                    if (data.created) {
+                        errorMessages += `<div><strong>Created:</strong> ${data.created.join('<br>')}</div>`;
+                    }
+                    if (data.non_field_errors) {
+                        errorMessages += `<div><strong>Error:</strong> ${data.non_field_errors.join('<br>')}</div>`;
+                    }
+
                     document.getElementById('response-message').innerHTML = `
-                        <div class="alert alert-danger">Unexpected response format. Please check the API response.</div>`;
+                        <div class="alert alert-danger">${errorMessages}</div>`;
                 }
             })
             .catch(error => {
